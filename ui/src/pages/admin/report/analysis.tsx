@@ -201,7 +201,8 @@ class ReportAnalysis extends React.Component<Props, State> {
               value={this.state.end}
               onChange={(d: Date) => this.setState({ end: d })}
               dailyOnly={true}
-              showTodayButton={false}
+              showTodayButton={true}
+              todayNextBoundaryMinutes={10}
             />
           </Col>
         </Form.Group>

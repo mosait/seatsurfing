@@ -3,3 +3,5 @@
 docker-readme-modified.md
 .vscode/
 node_modules/
+npm/
+postgres/

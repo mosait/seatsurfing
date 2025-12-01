@@ -12,6 +12,8 @@ interface Props {
   disabled?: boolean;
   dailyOnly?: boolean; // when true, show only date button
   showTodayButton?: boolean; // when false, hide Today button (e.g., for end/leave)
+  // Minutes granularity for the Today button rounding. Defaults to 5.
+  todayNextBoundaryMinutes?: number;
 }
 
 function zeroPad(v: number) {
@@ -24,6 +26,7 @@ const DateTimeButtonPicker: React.FC<Props> = ({
   disabled,
   dailyOnly,
   showTodayButton,
+  todayNextBoundaryMinutes = 5,
 }) => {
   const dateBtnRef = useRef<HTMLButtonElement | null>(null);
   const timeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -64,10 +67,14 @@ const DateTimeButtonPicker: React.FC<Props> = ({
       nd.setHours(0, 0, 0, 0);
       onChange(nd);
     } else {
-      // Always move to the next full minute so the current minute is not selectable.
+      // Snap to the next 5-minute boundary strictly after now
       const nd = new Date();
       nd.setSeconds(0, 0);
-      nd.setMinutes(nd.getMinutes() + 1);
+      const step = Math.max(1, todayNextBoundaryMinutes);
+      const m = nd.getMinutes();
+      const r = m % step;
+      const delta = r === 0 ? step : step - r; // strictly after current time
+      nd.setMinutes(m + delta);
       onChange(nd);
     }
     setShowDate(false);
@@ -83,11 +90,16 @@ const DateTimeButtonPicker: React.FC<Props> = ({
 
   const today = new Date();
   const now = new Date();
-  // Minimum allowed booking time is the next full minute. This ensures the current
-  // minute is not selectable (e.g. if it's 12:01:30 you can only pick 12:02 or later).
+  // Minimum allowed booking time is the next 5-minute boundary strictly after now.
+  // This ensures the current minute is not selectable (e.g. 12:01:30 -> 12:05; 12:14 -> 12:15).
   const minAllowed = new Date();
   minAllowed.setSeconds(0, 0);
-  minAllowed.setMinutes(minAllowed.getMinutes() + 1);
+  {
+    const m = minAllowed.getMinutes();
+    const r = m % 5;
+    const delta = r === 0 ? 5 : 5 - r;
+    minAllowed.setMinutes(m + delta);
+  }
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -252,9 +264,12 @@ const DateTimeButtonPicker: React.FC<Props> = ({
                       }}
                     >
                       {Array.from({ length: 24 }, (_, i) => i).map((h) => {
-                        const cand = new Date(value);
-                        cand.setHours(h, 0, 0, 0);
-                        const disabled = cand < minAllowed;
+                        const candStart = new Date(value);
+                        candStart.setHours(h, 0, 0, 0);
+                        const candEnd = new Date(value);
+                        candEnd.setHours(h, 59, 59, 999);
+                        // Disable the hour only if even the end of that hour is before the minimum allowed time
+                        const disabled = candEnd < minAllowed;
                         return (
                           <option key={h} value={h} disabled={disabled}>{h.toString().padStart(2,'0')}</option>
                         );
@@ -264,7 +279,7 @@ const DateTimeButtonPicker: React.FC<Props> = ({
                   <Col xs={6}>
                     <select
                       className="form-select"
-                      value={value.getMinutes()}
+                      value={value.getMinutes() - (value.getMinutes() % 5)}
                       onChange={(e) => {
                         const mm = parseInt(e.target.value, 10);
                         const nd = new Date(value);
@@ -272,7 +287,7 @@ const DateTimeButtonPicker: React.FC<Props> = ({
                         onChange(nd);
                       }}
                     >
-                      {Array.from({ length: 60 }, (_, i) => i).map((m) => {
+                      {Array.from({ length: 12 }, (_, i) => i * 5).map((m) => {
                         const cand = new Date(value);
                         cand.setHours(value.getHours(), m, 0, 0);
                         const disabled = cand < minAllowed;

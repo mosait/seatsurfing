@@ -711,7 +711,8 @@ class EditBooking extends React.Component<Props, State> {
         onChange={(d: Date) => this.setLeaveDate(d)}
         disabled={!this.state.canEdit}
         dailyOnly={this.dailyBasisBooking}
-        showTodayButton={false}
+        showTodayButton={true}
+        todayNextBoundaryMinutes={10}
       />
     );
 

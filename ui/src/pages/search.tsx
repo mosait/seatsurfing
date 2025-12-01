@@ -1621,7 +1621,8 @@ class Search extends React.Component<Props, State> {
           onChange={(d: Date) => this.setLeaveDate(d)}
           disabled={!this.state.locationId}
           dailyOnly={RuntimeConfig.INFOS.dailyBasisBooking}
-          showTodayButton={false}
+          showTodayButton={true}
+          todayNextBoundaryMinutes={10}
         />
       </div>
     );
@@ -1633,7 +1634,8 @@ class Search extends React.Component<Props, State> {
             value={this.state.leave}
             onChange={(d: Date) => this.setLeaveDate(d)}
             dailyOnly={true}
-            showTodayButton={false}
+            showTodayButton={true}
+            todayNextBoundaryMinutes={10}
           />
         </div>
       );

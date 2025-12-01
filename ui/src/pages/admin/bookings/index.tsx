@@ -275,7 +275,8 @@ class Bookings extends React.Component<Props, State> {
                   value={this.state.end}
                   onChange={(d: Date) => this.setState({ end: d })}
                   dailyOnly={false}
-                  showTodayButton={false}
+                  showTodayButton={true}
+                  todayNextBoundaryMinutes={10}
                 />
           </Col>
         </Form.Group>
