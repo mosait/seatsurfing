@@ -1,0 +1,65 @@
+services:
+  proxy:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    networks:
+      - seatsurfing-net
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+
+  backend:
+    build: ./
+    container_name: seatsurfing_backend
+    restart: unless-stopped
+    networks:
+      - seatsurfing-net
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_URL: "postgres://seatsurfing:yourpassword@seatsurfing_db/seatsurfing?sslmode=disable"
+      CRYPT_KEY: your_32_byte_encryption_key_here
+      PUBLIC_SCHEME: https
+      PUBLIC_PORT: 443
+      PUBLIC_LISTEN_ADDR: 0.0.0.0:8080
+      MAIL_SERVICE: SMTP
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_START_TLS: 1
+      SMTP_AUTH: 1
+      SMTP_AUTH_METHOD: LOGIN
+      SMTP_AUTH_USER: your_email@gmail.com
+      SMTP_AUTH_PASS: your_app_password
+      MAIL_SENDER_ADDRESS: your_email@gmail.com
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    container_name: seatsurfing_db
+    restart: unless-stopped
+    networks:
+      - seatsurfing-net
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/backups:/backups
+    environment:
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_USER: seatsurfing
+      POSTGRES_DB: seatsurfing
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seatsurfing"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  seatsurfing-net:
+    driver: bridge
+    enable_ipv6: false
